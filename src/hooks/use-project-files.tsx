@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 type FileType = {
   name: string;
-  content: string;
+  content: string | ArrayBuffer;  // Updated to support both string and ArrayBuffer
   type: string;
 };
 
@@ -126,7 +126,8 @@ export const useProjectFiles = (initialFiles: FileType[]) => {
     }
   }, [mainPreviewFile, getStorageKey, getCurrentProjectId]);
   
-  const updateFileContent = useCallback((fileName: string, content: string) => {
+  // Updated to handle both string and ArrayBuffer content
+  const updateFileContent = useCallback((fileName: string, content: string | ArrayBuffer) => {
     setFiles(prevFiles => 
       prevFiles.map(file => 
         file.name === fileName ? { ...file, content } : file

@@ -349,11 +349,23 @@ const Index = () => {
     }
   };
 
-  // Handle file upload
+  // Handle file upload - fixed to convert ArrayBuffer to string
   const handleFileUpload = (uploadedFile: { name: string, content: string | ArrayBuffer, type: string }) => {
+    // For binary files, ensure content is stored as a string
+    let fileContent = uploadedFile.content;
+    if (fileContent instanceof ArrayBuffer) {
+      // Convert ArrayBuffer to string (base64 for binary files)
+      const bytes = new Uint8Array(fileContent);
+      let binary = '';
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      fileContent = btoa(binary);
+    }
+    
     const newFile = {
       name: uploadedFile.name,
-      content: uploadedFile.content,
+      content: fileContent,
       type: uploadedFile.type
     };
     
@@ -1197,7 +1209,7 @@ Full file content here
             <div className="flex-1 h-full">
               <Tabs value={editorView} className="h-full">
                 <TabsContent value="code" className="h-full mt-0">
-                  <CodeEditor value={getCurrentFileContent()} onChange={updateFileContent} language={getCurrentFileLanguage()} />
+                  <CodeEditor value={getCurrentFileContent()} onChange={handleCodeEditorChange} language={getCurrentFileLanguage()} />
                 </TabsContent>
                 
                 <TabsContent value="files" className="h-full mt-0 overflow-hidden">
