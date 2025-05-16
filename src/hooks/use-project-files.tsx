@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 
 type FileType = {
@@ -140,14 +141,25 @@ export const useProjectFiles = (initialFiles: FileType[]) => {
     }
   }, []);
   
-  // Updated to handle both string and ArrayBuffer content
-  const updateFileContent = useCallback((fileName: string, content: string | ArrayBuffer) => {
-    setFiles(prevFiles => 
-      prevFiles.map(file => 
-        file.name === fileName ? { ...file, content } : file
-      )
-    );
-  }, []);
+  // Modified to handle both cases: updateFileContent(fileName, content) and updateFileContent(content)
+  const updateFileContent = useCallback((fileNameOrContent: string, content?: string | ArrayBuffer) => {
+    // If only one argument is provided, assume it's content for the current file
+    if (content === undefined) {
+      setFiles(prevFiles => 
+        prevFiles.map(file => 
+          file.name === currentFile ? { ...file, content: fileNameOrContent } : file
+        )
+      );
+    } 
+    // If two arguments, first is fileName, second is content
+    else {
+      setFiles(prevFiles => 
+        prevFiles.map(file => 
+          file.name === fileNameOrContent ? { ...file, content } : file
+        )
+      );
+    }
+  }, [currentFile]);
   
   return {
     files,

@@ -1216,7 +1216,12 @@ Full file content here
                   <div className="p-2">
                     <FileExplorerUpload onFileUpload={handleFileUpload} />
                   </div>
-                  <FileExplorerEnhanced files={files} setFiles={setFiles} currentFile={currentFile} setCurrentFile={setCurrentFile} />
+                  <FileExplorerEnhanced 
+                    files={files} 
+                    setFiles={setFiles} 
+                    currentFile={currentFile} 
+                    setCurrentFile={setCurrentFile} 
+                  />
                 </TabsContent>
               </Tabs>
             </div>
