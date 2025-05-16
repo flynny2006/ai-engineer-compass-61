@@ -15,15 +15,16 @@ import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import JSZip from 'jszip';
 
+// Define a proper interface that matches what useProjectFiles returns
 interface FileExplorerProps {
   files: {
     name: string;
-    content: string;
+    content: string | ArrayBuffer;
     type: string;
   }[];
   setFiles: React.Dispatch<React.SetStateAction<{
     name: string;
-    content: string;
+    content: string | ArrayBuffer;
     type: string;
   }[]>>;
   currentFile: string;

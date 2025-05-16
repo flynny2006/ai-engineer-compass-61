@@ -1201,7 +1201,11 @@ Full file content here
             <div className="flex-1 h-full">
               <Tabs value={editorView} className="h-full">
                 <TabsContent value="code" className="h-full mt-0">
-                  <CodeEditor value={getCurrentFileContent()} onChange={handleCodeEditorChange} language={getCurrentFileLanguage()} />
+                  <CodeEditor 
+                    value={getCurrentFileContent()} 
+                    onChange={handleCodeEditorChange} 
+                    language={getCurrentFileLanguage()} 
+                  />
                 </TabsContent>
                 
                 <TabsContent value="files" className="h-full mt-0 overflow-hidden">
