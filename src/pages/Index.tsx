@@ -1025,6 +1025,7 @@ Full file content here
       setIsLoading(false);
     }
   };
+  // Handle code editor change - updated to pass the correct arguments
   const handleCodeEditorChange = (value: string) => {
     updateFileContent(currentFile, value);
   };
@@ -1308,7 +1309,7 @@ Full file content here
                     </p>
                   </div>}
 
-                {/* Input Area */}
+                {/* Input Area - Updated placeholder and button size */}
                 <form onSubmit={handleSubmit} className="border-t p-3 flex gap-2">
                   <div className="flex items-center">
                     <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" ref={fileInputRef} />
