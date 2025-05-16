@@ -215,8 +215,13 @@ const FileExplorerEnhanced: React.FC<FileExplorerProps> = ({
   };
 
   // Download a single file
-  const downloadFile = (file: { name: string; content: string }) => {
-    const blob = new Blob([file.content], { type: 'text/plain' });
+  const downloadFile = (file: { name: string; content: string | ArrayBuffer }) => {
+    // Create a string version of content if it's an ArrayBuffer
+    const contentString = typeof file.content === 'string' 
+      ? file.content 
+      : new TextDecoder().decode(file.content);
+      
+    const blob = new Blob([contentString], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;

@@ -1025,6 +1025,9 @@ Full file content here
       setIsLoading(false);
     }
   };
+  const handleCodeEditorChange = (value: string) => {
+    updateFileContent(currentFile, value);
+  };
   const creditPercentage = dailyCredits / DAILY_CREDIT_LIMIT * 100;
   return (
     <div className={`flex flex-col h-screen bg-background ${theme}`}>
