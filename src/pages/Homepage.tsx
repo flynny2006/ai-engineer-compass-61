@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -7,8 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { useTheme } from "@/hooks/use-theme";
-import { Send, ArrowRight, Trash2, Copy, Key, ArrowUp } from "lucide-react";
+import { Send, ArrowRight, Trash2, Copy, Key, ArrowUp, Image, Sparkles, Code, Globe } from "lucide-react";
 import { BorderTrail } from "@/components/ui/border-trail";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface Project {
   id: string;
@@ -26,6 +27,8 @@ const Homepage = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showApiKeyInput, setShowApiKeyInput] = useState<boolean>(false);
   const [apiKey, setApiKey] = useState<string>("");
+  const [imageUpload, setImageUpload] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load projects and API key from localStorage
   useEffect(() => {
@@ -46,10 +49,10 @@ const Homepage = () => {
   }, []);
 
   const createNewProject = () => {
-    if (!prompt.trim()) {
+    if (!prompt.trim() && !imageUpload) {
       toast({
         title: "Empty prompt",
-        description: "Please enter what you want to build.",
+        description: "Please enter what you want to build or attach an image.",
         variant: "destructive"
       });
       return;
@@ -63,7 +66,7 @@ const Homepage = () => {
     // Create new project
     const newProject = {
       id: projectId,
-      name: prompt.length > 30 ? `${prompt.substring(0, 30)}...` : prompt,
+      name: prompt.length > 30 ? `${prompt.substring(0, 30)}...` : (prompt || "Image-based project"),
       createdAt: new Date().toISOString(),
       lastModified: new Date().toISOString(),
       files: [], // Will be populated in the project editor
@@ -90,10 +93,23 @@ const Homepage = () => {
         localStorage.setItem("gemini_api_key", apiKey); // Also save for the editor
       }
       
-      // Navigate to project page
-      setTimeout(() => {
-        navigate(`/project?id=${projectId}`);
-      }, 500);
+      // If image is selected, convert to base64 and store
+      if (imageUpload) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          localStorage.setItem("initial_image", reader.result as string);
+          // Navigate to project page
+          setTimeout(() => {
+            navigate(`/project?id=${projectId}`);
+          }, 500);
+        };
+        reader.readAsDataURL(imageUpload);
+      } else {
+        // Navigate to project page
+        setTimeout(() => {
+          navigate(`/project?id=${projectId}`);
+        }, 500);
+      }
     } catch (error) {
       console.error("Error saving project:", error);
       toast({
@@ -208,6 +224,48 @@ const Homepage = () => {
     }
   };
 
+  const handleImageAttach = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please upload an image smaller than 5MB.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload an image file.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      setImageUpload(file);
+      toast({
+        title: "Image attached",
+        description: `${file.name} ready to be used with your prompt.`
+      });
+    }
+  };
+
+  const clearAttachedImage = () => {
+    setImageUpload(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-black">
       <div className="container max-w-6xl mx-auto px-4 py-12 flex-1 flex flex-col">
@@ -245,15 +303,47 @@ const Homepage = () => {
               </div>
             </BorderTrail>
             
-            <div className="flex flex-col sm:flex-row justify-end items-center mt-6 gap-4">
-              <Button
-                onClick={() => setShowApiKeyInput(!showApiKeyInput)}
-                variant="outline"
-                className="border-white/20 text-white/80 hover:bg-white/10 w-full sm:w-auto"
-              >
-                <Key className="h-4 w-4 mr-2" />
-                {apiKey ? "Change API Key" : "Set API Key"}
-              </Button>
+            <div className="flex flex-col sm:flex-row justify-between items-center mt-6 gap-4">
+              <div className="flex gap-2 w-full sm:w-auto">
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleImageChange} 
+                  accept="image/*" 
+                  className="hidden" 
+                />
+                <Button
+                  onClick={handleImageAttach}
+                  variant="outline"
+                  className="border-white/20 text-white/80 hover:bg-white/10 w-full sm:w-auto"
+                >
+                  <Image className="h-4 w-4 mr-2" />
+                  Attach Image
+                </Button>
+                {imageUpload && (
+                  <div className="flex items-center gap-2 p-2 bg-white/10 rounded-md">
+                    <span className="text-sm text-white/80 truncate max-w-[150px]">{imageUpload.name}</span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={clearAttachedImage}
+                      className="h-6 w-6 p-0 text-white/60 hover:text-white/90"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <Button
+                  onClick={() => setShowApiKeyInput(!showApiKeyInput)}
+                  variant="outline"
+                  className="border-white/20 text-white/80 hover:bg-white/10 w-full sm:w-auto"
+                >
+                  <Key className="h-4 w-4 mr-2" />
+                  {apiKey ? "Change API Key" : "Set API Key"}
+                </Button>
+              </div>
             </div>
 
             {showApiKeyInput && (
@@ -271,6 +361,90 @@ const Homepage = () => {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Feature Cards Section */}
+        <div className="mt-12 w-full max-w-5xl mx-auto">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl md:text-4xl font-bold text-white">Build your Dream Website with Boongle AI</h2>
+            <p className="mt-4 text-gray-400 max-w-2xl mx-auto">
+              Our AI-powered platform helps you create stunning websites and applications in minutes, not months.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Feature Card 1 */}
+            <Card className="bg-black/30 backdrop-blur-md border border-white/10 hover:border-white/20 transition-all hover:-translate-y-1">
+              <CardHeader>
+                <Sparkles className="h-8 w-8 text-blue-400 mb-2" />
+                <CardTitle className="text-white">Enhanced Creative Power</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="text-gray-300 space-y-2">
+                  <li className="flex items-center gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-blue-400"></div>
+                    <span>25+ Prompts Daily</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-blue-400"></div>
+                    <span>Amazing Design & Functionality</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-blue-400"></div>
+                    <span>Customizable Templates</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            {/* Feature Card 2 */}
+            <Card className="bg-black/30 backdrop-blur-md border border-white/10 hover:border-white/20 transition-all hover:-translate-y-1">
+              <CardHeader>
+                <Code className="h-8 w-8 text-green-400 mb-2" />
+                <CardTitle className="text-white">Developer-Friendly</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="text-gray-300 space-y-2">
+                  <li className="flex items-center gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-green-400"></div>
+                    <span>Clean Code Generation</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-green-400"></div>
+                    <span>Modern React & Tailwind</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-green-400"></div>
+                    <span>Full Source Code Access</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            {/* Feature Card 3 */}
+            <Card className="bg-black/30 backdrop-blur-md border border-white/10 hover:border-white/20 transition-all hover:-translate-y-1">
+              <CardHeader>
+                <Globe className="h-8 w-8 text-purple-400 mb-2" />
+                <CardTitle className="text-white">Effortless Publishing</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="text-gray-300 space-y-2">
+                  <li className="flex items-center gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-purple-400"></div>
+                    <span>One-Click Deployment</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-purple-400"></div>
+                    <span>Custom Domain Support</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-purple-400"></div>
+                    <span>SSL Certificates Included</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
           </div>
         </div>
 

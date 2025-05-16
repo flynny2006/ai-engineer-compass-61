@@ -1,8 +1,10 @@
 
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Index from './Index';
 import { toast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 const ProjectEditor = () => {
   const navigate = useNavigate();
@@ -84,6 +86,10 @@ const ProjectEditor = () => {
     };
   }, []);
 
+  const handleBackToHome = () => {
+    navigate('/');
+  };
+
   if (initializing) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
@@ -92,7 +98,20 @@ const ProjectEditor = () => {
     );
   }
 
-  return <Index />;
+  return (
+    <div className="relative">
+      <Button 
+        onClick={handleBackToHome} 
+        className="absolute top-4 left-4 z-50 flex items-center gap-1"
+        variant="outline"
+        size="sm"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Home
+      </Button>
+      <Index />
+    </div>
+  );
 };
 
 export default ProjectEditor;

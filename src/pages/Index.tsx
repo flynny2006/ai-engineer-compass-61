@@ -414,6 +414,32 @@ const Index = () => {
     }
   }, []);
   
+  // Check for initial image upload from homepage
+  useEffect(() => {
+    const initialImage = localStorage.getItem("initial_image");
+    if (initialImage) {
+      // Create a file object from the data URL
+      const fetchImageFromDataURL = async (dataURL: string) => {
+        try {
+          const res = await fetch(dataURL);
+          const blob = await res.blob();
+          const file = new File([blob], "uploaded-image.jpg", { type: "image/jpeg" });
+          setImageUpload(file);
+          
+          // Auto-open image upload dialog
+          setShowImageUpload(true);
+          
+          // Clear the storage after loading
+          localStorage.removeItem("initial_image");
+        } catch (error) {
+          console.error("Error loading initial image:", error);
+        }
+      };
+      
+      fetchImageFromDataURL(initialImage);
+    }
+  }, []);
+  
   const saveApiKey = () => {
     if (apiKey) {
       localStorage.setItem("gemini_api_key", apiKey);
