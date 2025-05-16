@@ -126,6 +126,21 @@ export const useProjectFiles = (initialFiles: FileType[]) => {
     }
   }, [mainPreviewFile, getStorageKey, getCurrentProjectId]);
   
+  // Helper to safely convert content to string
+  const getContentAsString = useCallback((content: string | ArrayBuffer): string => {
+    if (typeof content === 'string') {
+      return content;
+    } else {
+      // Convert ArrayBuffer to string (base64 for binary files)
+      const bytes = new Uint8Array(content);
+      let binary = '';
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary);
+    }
+  }, []);
+  
   // Updated to handle both string and ArrayBuffer content
   const updateFileContent = useCallback((fileName: string, content: string | ArrayBuffer) => {
     setFiles(prevFiles => 
@@ -144,6 +159,7 @@ export const useProjectFiles = (initialFiles: FileType[]) => {
     setMainPreviewFile,
     updateFileContent,
     getCurrentProjectId,
-    getStorageKey
+    getStorageKey,
+    getContentAsString
   };
 };

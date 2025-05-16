@@ -109,7 +109,8 @@ const Index = () => {
     setMainPreviewFile,
     updateFileContent,
     getCurrentProjectId,
-    getStorageKey
+    getStorageKey,
+    getContentAsString
   } = useProjectFiles(initialFiles);
   
   const [userPrompt, setUserPrompt] = useState<string>("");
@@ -193,7 +194,7 @@ const Index = () => {
   // Get current file content and language
   const getCurrentFileContent = () => {
     const file = files.find(f => f.name === currentFile);
-    return file ? file.content : "";
+    return file ? (typeof file.content === 'string' ? file.content : '') : "";
   };
   const getCurrentFileLanguage = () => {
     if (currentFile.endsWith('.html')) return 'html';
@@ -295,7 +296,7 @@ const Index = () => {
     });
   };
   
-  // Enhanced updatePreview function to handle navigation
+  // Enhanced updatePreview function to handle content type safety
   const updatePreview = () => {
     if (previewIframeRef.current) {
       const iframe = previewIframeRef.current;
@@ -305,21 +306,23 @@ const Index = () => {
         const cssFile = files.find(f => f.name === "styles.css");
         const jsFile = files.find(f => f.name === "script.js");
 
-        // Construct the HTML with linked CSS and JS
-        let htmlContent = htmlFile ? htmlFile.content : DEFAULT_CODE;
+        // Convert content to string safely
+        let htmlContent = htmlFile ? getContentAsString(htmlFile.content) : DEFAULT_CODE;
+        const cssContent = cssFile ? getContentAsString(cssFile.content) : "";
+        const jsContent = jsFile ? getContentAsString(jsFile.content) : "";
 
         // Ensure the HTML structure is complete and add style/script tags if needed
-        if (htmlContent && !htmlContent.includes('</head>') && cssFile) {
+        if (htmlContent && !htmlContent.includes('</head>') && cssContent) {
           // If there's no head tag, we need to add one with the styles
-          htmlContent = htmlContent.replace('<html>', '<html>\n<head>\n<style>' + cssFile.content + '</style>\n</head>');
-        } else if (htmlContent && cssFile) {
+          htmlContent = htmlContent.replace('<html>', '<html>\n<head>\n<style>' + cssContent + '</style>\n</head>');
+        } else if (htmlContent && cssContent) {
           // Add styles if there's already a head tag
-          htmlContent = htmlContent.replace('</head>', `<style>${cssFile.content}</style>\n</head>`);
+          htmlContent = htmlContent.replace('</head>', `<style>${cssContent}</style>\n</head>`);
         }
 
         // Add JavaScript before closing body tag
-        if (htmlContent && jsFile) {
-          htmlContent = htmlContent.replace('</body>', `<script>${jsFile.content}</script>\n</body>`);
+        if (htmlContent && jsContent) {
+          htmlContent = htmlContent.replace('</body>', `<script>${jsContent}</script>\n</body>`);
         }
 
         // Add navigation listener script to intercept clicks on links
@@ -351,21 +354,10 @@ const Index = () => {
 
   // Handle file upload - fixed to convert ArrayBuffer to string
   const handleFileUpload = (uploadedFile: { name: string, content: string | ArrayBuffer, type: string }) => {
-    // For binary files, ensure content is stored as a string
-    let fileContent = uploadedFile.content;
-    if (fileContent instanceof ArrayBuffer) {
-      // Convert ArrayBuffer to string (base64 for binary files)
-      const bytes = new Uint8Array(fileContent);
-      let binary = '';
-      for (let i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCharCode(bytes[i]);
-      }
-      fileContent = btoa(binary);
-    }
-    
+    // Create a new file with the uploaded content
     const newFile = {
       name: uploadedFile.name,
-      content: fileContent,
+      content: uploadedFile.content,
       type: uploadedFile.type
     };
     
