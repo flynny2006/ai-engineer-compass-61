@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Download, File, FolderOpen, Trash, Plus, Edit, Save, FileText, Code, FileJson, FilePen, Upload, Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,7 +14,7 @@ import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import JSZip from 'jszip';
 
-// Define a proper interface that matches what useProjectFiles returns
+// Updated interface to match FileType from use-project-files.tsx
 interface FileExplorerProps {
   files: {
     name: string;
@@ -54,6 +53,21 @@ const FileExplorerEnhanced: React.FC<FileExplorerProps> = ({
     if (['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'].some(ext => fileName.toLowerCase().endsWith(ext))) 
       return <Image className="h-4 w-4 text-pink-500" />;
     return <FileText className="h-4 w-4" />;
+  };
+
+  // Helper function to safely convert content to string
+  const getContentAsString = (content: string | ArrayBuffer): string => {
+    if (typeof content === 'string') {
+      return content;
+    } else {
+      // Convert ArrayBuffer to string (base64 for binary files)
+      const bytes = new Uint8Array(content);
+      let binary = '';
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary);
+    }
   };
 
   const addNewFile = () => {
@@ -216,13 +230,15 @@ const FileExplorerEnhanced: React.FC<FileExplorerProps> = ({
 
   // Download a single file
   const downloadFile = (file: { name: string; content: string | ArrayBuffer }) => {
-    // Create a string version of content if it's an ArrayBuffer
-    const contentString = typeof file.content === 'string' 
+    // Create a string or blob based on content type
+    const contentForDownload = typeof file.content === 'string' 
       ? file.content 
-      : new TextDecoder().decode(file.content);
+      : new Blob([file.content], { type: 'application/octet-stream' });
       
-    const blob = new Blob([contentString], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(typeof contentForDownload === 'string' 
+      ? new Blob([getContentAsString(file.content)], { type: 'text/plain' }) 
+      : contentForDownload);
+      
     const a = document.createElement('a');
     a.href = url;
     a.download = file.name;
@@ -242,7 +258,10 @@ const FileExplorerEnhanced: React.FC<FileExplorerProps> = ({
     const zip = new JSZip();
     
     files.forEach(file => {
-      zip.file(file.name, file.content);
+      const content = typeof file.content === 'string' 
+        ? file.content 
+        : file.content;
+      zip.file(file.name, content);
     });
     
     zip.generateAsync({ type: "blob" }).then(content => {
